@@ -1,0 +1,13 @@
+html,
+body {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game {
+    image-rendering: pixelated;
+}
