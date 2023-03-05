@@ -5,6 +5,14 @@ export class Input {
         this.keyWasPressed = new Set();
         this.mouseButtonWasPressed = new Set();
         this.hasListeners = false;
+
+        this.leftKeys = ["KeyA", "ArrowLeft"];
+        this.rightKeys = ["KeyD", "ArrowRight"];
+        this.horizontalKeys = this.leftKeys.concat(this.rightKeys);
+
+        this.upKeys = ["KeyW", "ArrowUp"];
+        this.downKeys = ["KeyS", "ArrowDown"];
+        this.verticalKeys = this.upKeys.concat(this.downKeys);
     }
 
     isKeyPressed = (key) => {
@@ -21,6 +29,46 @@ export class Input {
 
     isMouseButtonPressed = (button) => {
         return this.pressedMouseButtons.has(button);
+    }
+
+    wasHorizontalKeyPressed = () => {
+        return this.wasAnyOfKeysPressed(this.horizontalKeys);
+    }
+
+    wasVerticalKeyPressed = () => {
+        return this.wasAnyOfKeysPressed(this.verticalKeys);
+    }
+
+    getHorizontalAxis = () => {
+        return this.getAxis(this.leftKeys, this.rightKeys);
+    }
+
+    getVerticalAxis = () => {
+        return this.getAxis(this.upKeys, this.downKeys);
+    }
+
+    getAxis = (negativeKeys, positiveKeys) => {
+        let direction = 0;
+
+        if (this.wasAnyOfKeysPressed(negativeKeys)) {
+            direction -= 1;
+        }
+
+        if (this.wasAnyOfKeysPressed(positiveKeys)) {
+            direction += 1;
+        }
+
+        return direction;
+    }
+
+    wasAnyOfKeysPressed = (keys) => {
+        for (const key of keys) {
+            if (this.isKeyPressed(key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     update = () => {

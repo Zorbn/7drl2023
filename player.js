@@ -1,32 +1,29 @@
-const MOVE_COOLDOWN = 0.25;
+const MOVE_COOLDOWN = 0.2;
 
 export class Player {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.lastPressedHorizontal = false;
         this.moveTimer = 0;
     }
 
     update = (input, world, deltaTime) => {
-        let deltaX = 0;
-        let deltaY = 0;
+        let deltaX = input.getHorizontalAxis();
+        let deltaY = input.getVerticalAxis();
 
         this.moveTimer -= deltaTime;
 
-        if (input.isKeyPressed("KeyA")) {
-            deltaX -= 1;
+        // Track which direction the player last tried to move in.
+        // This is used to decide which direction to move the player in
+        // when the player tries to move diagonally, it feels more fluid
+        // than arbitrarily limiting the player's movement on one direction.
+        if (input.wasHorizontalKeyPressed()) {
+            this.lastPressedHorizontal = true;
         }
 
-        if (input.isKeyPressed("KeyD")) {
-            deltaX += 1;
-        }
-
-        if (input.isKeyPressed("KeyW")) {
-            deltaY -= 1;
-        }
-
-        if (input.isKeyPressed("KeyS")) {
-            deltaY += 1;
+        if (input.wasVerticalKeyPressed()) {
+            this.lastPressedHorizontal = false;
         }
 
         if (deltaX == 0 && deltaY == 0) {
@@ -39,7 +36,11 @@ export class Player {
         }
 
         if (deltaX != 0 && deltaY != 0) {
-            deltaX = 0;
+            if (this.lastPressedHorizontal) {
+                deltaY = 0;
+            } else {
+                deltaX = 0;
+            }
         }
 
         this.moveTimer = MOVE_COOLDOWN;
