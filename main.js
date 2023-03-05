@@ -1,7 +1,7 @@
 import { Input } from "./input.js";
 import { VIEW_WIDTH, VIEW_HEIGHT, Renderer } from "./renderer.js";
+import { TILE_SIZE, World } from "./world.js";
 
-const TILE_SIZE = 16;
 const VIEW_TILES_WIDTH = Math.floor(VIEW_WIDTH / TILE_SIZE);
 const VIEW_TILES_HEIGHT = Math.floor(VIEW_HEIGHT / TILE_SIZE);
 
@@ -13,6 +13,9 @@ input.addListeners();
 
 const renderer = new Renderer();
 const tilesTexture = await renderer.loadTexture("tiles.png", 256, 256);
+
+const world = new World(VIEW_TILES_WIDTH, VIEW_TILES_HEIGHT);
+world.generate();
 
 const fpsTime = 1;
 let fpsTimer = 0;
@@ -51,12 +54,7 @@ let player = {
 const draw = (deltaTime) => {
     const drawStartTime = performance.now();
 
-    for (let y = 0; y < VIEW_TILES_HEIGHT; y++) {
-        for (let x = 0; x < VIEW_TILES_WIDTH; x++) {
-            renderer.drawSprite(x * TILE_SIZE, y * TILE_SIZE,
-                TILE_SIZE, TILE_SIZE, tilesTexture, 0, 0);
-        }
-    }
+    world.draw(renderer, tilesTexture);
 
     renderer.update(ctx);
 
