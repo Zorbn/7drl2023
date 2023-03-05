@@ -2,6 +2,7 @@ import { TILE_SIZE } from "./world.js";
 
 const MOVE_COOLDOWN = 0.2;
 const MAX_HEALTH = 100;
+const BASE_DAMAGE = 10;
 
 export class Player {
     constructor() {
@@ -9,8 +10,9 @@ export class Player {
         this.moveTimer = 0;
         this.textureIndex = 0;
         this.isEnemy = false;
-        this.damage = 10;
+        this.damage = BASE_DAMAGE;
         this.health = MAX_HEALTH;
+        this.shield = 0;
     }
 
     update = (input, world, particles, deltaTime) => {
@@ -68,5 +70,21 @@ export class Player {
             2,
             255, 0, 0,
         );
+    }
+
+    heal = (amount) => {
+        this.health += amount;
+
+        if (this.health > MAX_HEALTH) {
+            this.health = MAX_HEALTH;
+        }
+    }
+
+    setDamage = (bonusDamage) => {
+        this.damage = BASE_DAMAGE + bonusDamage;
+    }
+
+    setShield = (bonusShield) => {
+        this.shield = bonusShield;
     }
 }

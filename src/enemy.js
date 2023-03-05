@@ -4,5 +4,6 @@ export class Enemy {
         this.isEnemy = true;
         this.damage = 10;
         this.health = 20;
+        this.shield = 0;
     }
 }

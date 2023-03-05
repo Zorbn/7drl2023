@@ -16,30 +16,42 @@ export const STONE_FLOOR_TILE = {
     textureIndex: 0,
     isLight: false,
     isWalkable: true,
+    isExit: false,
 };
 
 export const STONE_WALL_TILE = {
     textureIndex: 1,
     isLight: false,
     isWalkable: false,
+    isExit: false,
 };
 
-export const GREEN_SQUARE_LIGHT = {
+export const HEALTH_LIGHT_TILE = {
     textureIndex: 0,
     isLight: true,
     isWalkable: true,
+    isExit: false,
 };
 
-export const BLUE_CIRCLE_LIGHT = {
+export const DAMAGE_LIGHT_TILE = {
     textureIndex: 1,
     isLight: true,
     isWalkable: true,
+    isExit: false,
 };
 
-export const YELLOW_TRIANGLE_LIGHT = {
+export const SHIELD_LIGHT_TILE = {
     textureIndex: 2,
     isLight: true,
     isWalkable: true,
+    isExit: false,
+};
+
+export const EXIT_TILE = {
+    textureIndex: 0,
+    isLight: false,
+    isWalkable: true,
+    isExit: true,
 };
 
 export class World {
@@ -51,7 +63,6 @@ export class World {
         this.tiles = new Array(width * height);
         this.entities = new Array(width * height);
         this.entityPositions = new Map();
-        this.enemies = [];
         this.subTiles = new Array(this.subtilesWidth * this.subtilesHeight);
     }
 
@@ -114,9 +125,11 @@ export class World {
         }
     }
 
-    generateLights = () => {
+    generateGameplay = () => {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
+                this.removeEntityAt(x, y);
+
                 const tile = this.getTile(x, y);
 
                 if (tile != STONE_FLOOR_TILE) {
@@ -131,13 +144,13 @@ export class World {
                 let light;
                 switch (lightType) {
                     case 0:
-                        light = GREEN_SQUARE_LIGHT;
+                        light = HEALTH_LIGHT_TILE;
                         break;
                     case 1:
-                        light = BLUE_CIRCLE_LIGHT;
+                        light = DAMAGE_LIGHT_TILE;
                         break;
                     case 2:
-                        light = YELLOW_TRIANGLE_LIGHT;
+                        light = SHIELD_LIGHT_TILE;
                         break;
                 }
                 this.setTile(x, y, light);
@@ -145,9 +158,16 @@ export class World {
         }
     }
 
+    generateExit = () => {
+        const exitX = Math.floor(Math.random() * this.width);
+        const exitY = Math.floor(Math.random() * this.height);
+        this.setTile(exitX, exitY, EXIT_TILE);
+    }
+
     generate = () => {
         this.generateRooms();
-        this.generateLights();
+        this.generateGameplay();
+        this.generateExit();
     }
 
     getTile = (x, y) => {
@@ -243,7 +263,7 @@ export class World {
         const entityAtDst = this.getEntity(dstX, dstY);
         if (entityAtDst) {
             if (entityAtDst.isEnemy != entity.isEnemy) {
-                this.attackEntity(entityAtDst, entity.damage, particles);
+                this.attackEntity(entity, entityAtDst, particles);
             }
 
             return;
@@ -270,30 +290,30 @@ export class World {
         this.setEntity(dstX, dstY, entity);
     }
 
-    attackEntity = (entity, damage, particles) => {
-        const entityPosition = this.getEntityPosition(entity);
-        entity.health -= damage;
-        if (entity.health > 0) {
-            particles.push(new Particle(entityPosition.x, entityPosition.y, SPARK_PARTICLE));
+    attackEntity = (attacker, target, particles) => {
+        const targetPosition = this.getEntityPosition(target);
+        target.health -= Math.max(attacker.damage - target.shield, 0);
+        if (target.health > 0) {
+            particles.push(new Particle(targetPosition.x, targetPosition.y, SPARK_PARTICLE));
             return;
         }
 
-        this.removeEntity(entity);
-        particles.push(new Particle(entityPosition.x, entityPosition.y, FIREWORK_PARTICLE));
+        this.removeEntity(target);
+        particles.push(new Particle(targetPosition.x, targetPosition.y, FIREWORK_PARTICLE));
     }
 
     updateEnemies = (particles) => {
-        this.enemies = [];
+        let enemies = [];
 
         for (const entity of this.entityPositions.keys()) {
             if (!entity.isEnemy) {
                 continue;
             }
 
-            this.enemies.push(entity);
+            enemies.push(entity);
         }
 
-        for (const entity of this.enemies) {
+        for (const entity of enemies) {
             const direction = Math.floor(Math.random() * 4);
             let directionX = 0
             let directionY = 0;
@@ -364,33 +384,20 @@ export class World {
         }
     }
 
+    isTileLit = (x, y, tile) => {
+        return this.getTile(x + 1, y) == tile ||
+        this.getTile(x - 1, y) == tile ||
+        this.getTile(x, y + 1) == tile ||
+        this.getTile(x, y - 1) == tile;
+    }
+
     draw = (renderer, texture) => {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
-                const entity = this.entities[x + y * this.width];
-                if (entity) {
-                    const entityX = x * TILE_SIZE;
-                    const entityY = y * TILE_SIZE;
-
-                    renderer.drawSprite(
-                        entityX,
-                        entityY,
-                        TILE_SIZE,
-                        TILE_SIZE,
-                        texture,
-                        entity.textureIndex * TILE_SIZE,
-                        40,
-                    );
-
-                    continue;
-                }
-
                 const tile = this.getTile(x, y);
+
                 if (tile.isLight) {
-                    const isLit = this.getTile(x + 1, y) == tile ||
-                        this.getTile(x - 1, y) == tile ||
-                        this.getTile(x, y + 1) == tile ||
-                        this.getTile(x, y - 1) == tile;
+                    const isLit = this.isTileLit(x, y, tile);
 
                     let texX = TILE_SIZE * tile.textureIndex * 2;
 
@@ -407,25 +414,50 @@ export class World {
                         texX,
                         24,
                     );
-                    continue;
+                } else if (tile.isExit) {
+                    renderer.drawSprite(
+                        x * TILE_SIZE,
+                        y * TILE_SIZE,
+                        TILE_SIZE,
+                        TILE_SIZE,
+                        texture,
+                        0,
+                        88,
+                    );
+                } else {
+                    for (let subY = 0; subY < 2; subY++) {
+                        for (let subX = 0; subX < 2; subX++) {
+                            const subTileX = x * 2 + subX;
+                            const subTileY = y * 2 + subY;
+                            const subTile = this.subTiles[subTileX + subTileY * this.subtilesWidth];
+
+                            renderer.drawSprite(
+                                subTileX * SUBTILE_SIZE,
+                                subTileY * SUBTILE_SIZE,
+                                SUBTILE_SIZE,
+                                SUBTILE_SIZE,
+                                texture,
+                                subTile.texX,
+                                subTile.texY,
+                            );
+                        }
+                    }
                 }
 
-                for (let subY = 0; subY < 2; subY++) {
-                    for (let subX = 0; subX < 2; subX++) {
-                        const subTileX = x * 2 + subX;
-                        const subTileY = y * 2 + subY;
-                        const subTile = this.subTiles[subTileX + subTileY * this.subtilesWidth];
+                const entity = this.entities[x + y * this.width];
+                if (entity) {
+                    const entityX = x * TILE_SIZE;
+                    const entityY = y * TILE_SIZE;
 
-                        renderer.drawSprite(
-                            subTileX * SUBTILE_SIZE,
-                            subTileY * SUBTILE_SIZE,
-                            SUBTILE_SIZE,
-                            SUBTILE_SIZE,
-                            texture,
-                            subTile.texX,
-                            subTile.texY,
-                        );
-                    }
+                    renderer.drawSprite(
+                        entityX,
+                        entityY,
+                        TILE_SIZE,
+                        TILE_SIZE,
+                        texture,
+                        entity.textureIndex * TILE_SIZE,
+                        40,
+                    );
                 }
             }
         }
@@ -493,5 +525,35 @@ export class World {
 
         this.setTile(x, 0, loopedTile);
         this.setEntity(x, 0, loopedEntity);
+    }
+
+    calculateBonuses = (bonuses, particles) => {
+        bonuses.damage = 0;
+        bonuses.health = 0;
+        bonuses.shield = 0;
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const tile = this.getTile(x, y);
+                if (!tile || !tile.isLight ||
+                    !this.isTileLit(x, y, tile)) continue;
+
+                particles.push(new Particle(x, y, FIREWORK_PARTICLE));
+
+                if (tile == DAMAGE_LIGHT_TILE) {
+                    bonuses.damage += 1;
+                    continue;
+                }
+
+                if (tile == HEALTH_LIGHT_TILE) {
+                    bonuses.health += 1;
+                    continue;
+                }
+
+                if (tile == SHIELD_LIGHT_TILE) {
+                    bonuses.shield += 1;
+                }
+            }
+        }
     }
 }

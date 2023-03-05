@@ -33,7 +33,7 @@ export class Particle {
     }
 
     draw = (renderer, texture) => {
-        renderer.drawSpriteTransparent(
+        renderer.drawSprite(
             this.x * TILE_SIZE,
             this.y * TILE_SIZE,
             TILE_SIZE,
