@@ -1,9 +1,7 @@
 const MOVE_COOLDOWN = 0.2;
 
 export class Player {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
+    constructor() {
         this.lastPressedHorizontal = false;
         this.moveTimer = 0;
     }
@@ -45,20 +43,6 @@ export class Player {
 
         this.moveTimer = MOVE_COOLDOWN;
 
-        this.move(deltaX, deltaY, world);
-    }
-
-    move = (deltaX, deltaY, world) => {
-        const dstX = this.x + deltaX;
-        const dstY = this.y + deltaY;
-
-        if (world.isOccupied(dstX, dstY)) {
-            return;
-        }
-
-        world.removeEntity(this.x, this.y);
-        this.x = dstX;
-        this.y = dstY;
-        world.addEntity(this.x, this.y, this);
+        world.moveEntity(deltaX, deltaY, this, true);
     }
 }

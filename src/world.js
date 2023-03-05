@@ -24,6 +24,7 @@ export class World {
         this.subtilesHeight = height * 2;
         this.tiles = new Array(width * height);
         this.entities = new Array(width * height);
+        this.entityPositions = new Map();
         this.subTiles = new Array(this.subtilesWidth * this.subtilesHeight);
     }
 
@@ -68,11 +69,42 @@ export class World {
         }
     }
 
-    removeEntity = (x, y) => {
+    removeEntityAt = (x, y) => {
+        const entity = this.entities[x + y * this.width];
+
+        if (!entity) {
+            return;
+        }
+
+        this.entityPositions.delete(entity);
+
         this.entities[x + y * this.width] = null;
     }
 
-    addEntity = (x, y, entity) => {
+    removeEntity = (entity) => {
+        const entityPosition = this.entityPositions.get(entity);
+
+        if (!entityPosition) {
+            return;
+        }
+
+        this.removeEntityAt(entityPosition.x, entityPosition.y);
+    }
+
+    setEntity = (x, y, entity) => {
+        // Try to remove the entity, so that entities can't get into the
+        // world twice and cause problems.
+        this.removeEntity(entity);
+
+        if (!entity) {
+            return;
+        }
+
+        this.entityPositions.set(entity, {
+            x,
+            y,
+        });
+
         this.entities[x + y * this.width] = entity;
     }
 
@@ -82,6 +114,37 @@ export class World {
         }
 
         return this.entities[x + y * this.width];
+    }
+
+    moveEntity = (deltaX, deltaY, entity, canPush = false) => {
+        const entityPosition = this.entityPositions.get(entity);
+
+        if (!entityPosition) {
+            return;
+        }
+
+        const dstX = entityPosition.x + deltaX;
+        const dstY = entityPosition.y + deltaY;
+
+        if (this.isOccupied(dstX, dstY)) {
+            if (!canPush) {
+                return;
+            }
+
+            if (deltaX < 0) {
+                this.pushRowLeft(entityPosition.y);
+            } else if (deltaX > 0) {
+                this.pushRowRight(entityPosition.y);
+            } else if (deltaY < 0) {
+                this.pushRowUp(entityPosition.x);
+            } else if (deltaY > 0) {
+                this.pushRowDown(entityPosition.x);
+            }
+
+            return;
+        }
+
+        this.setEntity(dstX, dstY, entity);
     }
 
     isOccupied = (x, y) => {
@@ -166,5 +229,69 @@ export class World {
                 }
             }
         }
+    }
+
+    pushRowLeft = (y) => {
+        const loopedTile = this.getTile(0, y);
+        const loopedEntity = this.getEntity(0, y);
+
+        for (let x = 1; x < this.width; x++) {
+            const tile = this.getTile(x, y);
+            const entity = this.getEntity(x, y);
+
+            this.setTile(x - 1, y, tile);
+            this.setEntity(x - 1, y, entity);
+        }
+
+        this.setTile(this.width - 1, y, loopedTile);
+        this.setEntity(this.width - 1, y, loopedEntity);
+    }
+
+    pushRowRight = (y) => {
+        const loopedTile = this.getTile(this.width - 1, y);
+        const loopedEntity = this.getEntity(this.width - 1, y);
+
+        for (let x = this.width - 2; x >= 0; x--) {
+            const tile = this.getTile(x, y);
+            const entity = this.getEntity(x, y);
+
+            this.setTile(x + 1, y, tile);
+            this.setEntity(x + 1, y, entity);
+        }
+
+        this.setTile(0, y, loopedTile);
+        this.setEntity(0, y, loopedEntity);
+    }
+
+    pushRowUp = (x) => {
+        const loopedTile = this.getTile(x, 0);
+        const loopedEntity = this.getEntity(x, 0);
+
+        for (let y = 1; y < this.height; y++) {
+            const tile = this.getTile(x, y);
+            const entity = this.getEntity(x, y);
+
+            this.setTile(x, y - 1, tile);
+            this.setEntity(x, y - 1, entity);
+        }
+
+        this.setTile(x, this.height - 1, loopedTile);
+        this.setEntity(x, this.height - 1, loopedEntity);
+    }
+
+    pushRowDown = (x) => {
+        const loopedTile = this.getTile(x, this.height - 1);
+        const loopedEntity = this.getEntity(x, this.height - 1);
+
+        for (let y = this.height - 2; y >= 0; y--) {
+            const tile = this.getTile(x, y);
+            const entity = this.getEntity(x, y);
+
+            this.setTile(x, y + 1, tile);
+            this.setEntity(x, y + 1, entity);
+        }
+
+        this.setTile(x, 0, loopedTile);
+        this.setEntity(x, 0, loopedEntity);
     }
 }

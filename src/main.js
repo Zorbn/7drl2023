@@ -18,7 +18,8 @@ const tilesTexture = await renderer.loadTexture("tiles.png", 256, 256);
 const world = new World(VIEW_TILES_WIDTH, VIEW_TILES_HEIGHT);
 world.generate();
 
-const player = new Player(0, 0);
+const player = new Player(0, 0, world);
+world.setEntity(0, 0, player);
 
 const fpsTime = 1;
 let fpsTimer = 0;
