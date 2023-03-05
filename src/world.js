@@ -1,3 +1,5 @@
+import { FIREWORK_PARTICLE, Particle, SPARK_PARTICLE } from "./particle.js";
+
 export const TILE_SIZE = 16;
 const SUBTILE_SIZE = 8;
 const TILE_TEXTURE_WIDTH = SUBTILE_SIZE * 5;
@@ -5,16 +7,39 @@ const TILE_TEXTURE_CENTER_X = 1;
 const TILE_TEXTURE_CENTER_Y = 1;
 const TILE_TEXTURE_CORNER_X = 4;
 const TILE_TEXTURE_CORNER_Y = 1;
-const GENERATION_PASSES = 4;
+
+const ROOM_SIZE_VARIANCE = 4;
+const MIN_ROOM_SIZE = 2;
+const ROOM_COUNT = 10;
 
 export const STONE_FLOOR_TILE = {
     textureIndex: 0,
-    walkable: true,
-}
+    isLight: false,
+    isWalkable: true,
+};
 
 export const STONE_WALL_TILE = {
     textureIndex: 1,
-    walkable: false,
+    isLight: false,
+    isWalkable: false,
+};
+
+export const GREEN_SQUARE_LIGHT = {
+    textureIndex: 0,
+    isLight: true,
+    isWalkable: true,
+};
+
+export const BLUE_CIRCLE_LIGHT = {
+    textureIndex: 1,
+    isLight: true,
+    isWalkable: true,
+};
+
+export const YELLOW_TRIANGLE_LIGHT = {
+    textureIndex: 2,
+    isLight: true,
+    isWalkable: true,
 };
 
 export class World {
@@ -26,73 +51,103 @@ export class World {
         this.tiles = new Array(width * height);
         this.entities = new Array(width * height);
         this.entityPositions = new Map();
+        this.enemies = [];
         this.subTiles = new Array(this.subtilesWidth * this.subtilesHeight);
     }
 
+    generateRooms = () => {
+        let rooms = new Array(ROOM_COUNT);
+
+        for (let i = 0; i < ROOM_COUNT; i++) {
+            rooms[i] = {
+                x: Math.floor(Math.random() * this.width),
+                y: Math.floor(Math.random() * this.height),
+                width: MIN_ROOM_SIZE + Math.floor(Math.random() * ROOM_SIZE_VARIANCE),
+                height: MIN_ROOM_SIZE + Math.floor(Math.random() * ROOM_SIZE_VARIANCE),
+            };
+        }
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                this.setTile(x, y, STONE_WALL_TILE);
+            }
+        }
+
+        for (const room of rooms) {
+            for (let y = room.y; y < room.y + room.height; y++) {
+                for (let x = room.x; x < room.x + room.width; x++) {
+                    this.setTile(x, y, STONE_FLOOR_TILE);
+                }
+            }
+        }
+
+        for (let i = 1; i < rooms.length; i++) {
+            const lastRoom = rooms[i - 1];
+            const room = rooms[i];
+
+            let startX;
+            let endX;
+            let startY = lastRoom.y + Math.floor(Math.random() * lastRoom.height);
+            let endY;
+
+            if (lastRoom.x < room.x) {
+                startX = lastRoom.x + lastRoom.width;
+                endX = room.x;
+            } else {
+                startX = room.x + room.width;
+                endX = lastRoom.x;
+            }
+
+            for (let x = startX; x <= endX; x++) {
+                this.setTile(x, startY, STONE_FLOOR_TILE);
+            }
+
+            if (lastRoom.y < room.y) {
+                endY = room.y;
+            } else {
+                endY = lastRoom.y;
+            }
+
+            for (let y = startY; y <= endY; y++) {
+                this.setTile(endX, y, STONE_FLOOR_TILE);
+            }
+        }
+    }
+
+    generateLights = () => {
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const tile = this.getTile(x, y);
+
+                if (tile != STONE_FLOOR_TILE) {
+                    continue;
+                }
+
+                if (Math.random() > 0.2) {
+                    continue;
+                }
+
+                const lightType = Math.floor(Math.random() * 3);
+                let light;
+                switch (lightType) {
+                    case 0:
+                        light = GREEN_SQUARE_LIGHT;
+                        break;
+                    case 1:
+                        light = BLUE_CIRCLE_LIGHT;
+                        break;
+                    case 2:
+                        light = YELLOW_TRIANGLE_LIGHT;
+                        break;
+                }
+                this.setTile(x, y, light);
+            }
+        }
+    }
+
     generate = () => {
-        let partitions = [{
-            x: 0,
-            y: 0,
-            width: this.width,
-            height: this.height,
-        }];
-
-        for (let i = 0; i < GENERATION_PASSES; i++) {
-            const partitionCount = partitions.length;
-
-            for (let j = 0; j < partitionCount; j++) {
-                const oldPartition = partitions.shift();
-
-                if (Math.random() > 0.5) {
-                    // Split horizontally:
-                    const splitPoint = Math.floor(Math.random() * oldPartition.width);
-                    partitions.push({
-                        x: oldPartition.x,
-                        y: oldPartition.y,
-                        width: splitPoint + 1,
-                        height: oldPartition.height,
-                    });
-                    partitions.push({
-                        x: oldPartition.x + splitPoint,
-                        y: oldPartition.y,
-                        width: oldPartition.width - splitPoint,
-                        height: oldPartition.height,
-                    });
-                } else {
-                    // Split vertically:
-                    const splitPoint = Math.floor(Math.random() * oldPartition.height);
-                    partitions.push({
-                        x: oldPartition.x,
-                        y: oldPartition.y,
-                        width: oldPartition.width,
-                        height: splitPoint + 1,
-                    });
-                    partitions.push({
-                        x: oldPartition.x,
-                        y: oldPartition.y + splitPoint,
-                        width: oldPartition.width,
-                        height: oldPartition.height - splitPoint,
-                    });
-                }
-            }
-        }
-
-        for (const partition of partitions) {
-            for (let y = 0; y < partition.height; y++) {
-                for (let x = 0; x < partition.width; x++) {
-                    let tile = STONE_FLOOR_TILE;
-
-                    if (x == 0 || y == 0 ||
-                        x == partition.width - 1 ||
-                        y == partition.height - 1) {
-
-                        tile = STONE_WALL_TILE;
-                    }
-
-                    this.setTile(x + partition.x, y + partition.y, tile);
-                }
-            }
-        }
+        this.generateRooms();
+        this.generateLights();
     }
 
     getTile = (x, y) => {
@@ -122,6 +177,10 @@ export class World {
         }
     }
 
+    getEntityPosition = (entity) => {
+        return this.entityPositions.get(entity);
+    }
+
     removeEntityAt = (x, y) => {
         const entity = this.entities[x + y * this.width];
 
@@ -145,6 +204,8 @@ export class World {
     }
 
     setEntity = (x, y, entity) => {
+        this.removeEntity(x, y);
+
         // Try to remove the entity, so that entities can't get into the
         // world twice and cause problems.
         this.removeEntity(entity);
@@ -169,7 +230,7 @@ export class World {
         return this.entities[x + y * this.width];
     }
 
-    moveEntity = (deltaX, deltaY, entity, canPush = false) => {
+    moveEntity = (deltaX, deltaY, entity, particles, canPush = false) => {
         const entityPosition = this.entityPositions.get(entity);
 
         if (!entityPosition) {
@@ -179,7 +240,16 @@ export class World {
         const dstX = entityPosition.x + deltaX;
         const dstY = entityPosition.y + deltaY;
 
-        if (this.isOccupied(dstX, dstY)) {
+        const entityAtDst = this.getEntity(dstX, dstY);
+        if (entityAtDst) {
+            if (entityAtDst.isEnemy != entity.isEnemy) {
+                this.attackEntity(entityAtDst, entity.damage, particles);
+            }
+
+            return;
+        }
+
+        if (!this.getTile(dstX, dstY).isWalkable) {
             if (!canPush) {
                 return;
             }
@@ -200,8 +270,55 @@ export class World {
         this.setEntity(dstX, dstY, entity);
     }
 
+    attackEntity = (entity, damage, particles) => {
+        const entityPosition = this.getEntityPosition(entity);
+        entity.health -= damage;
+        if (entity.health > 0) {
+            particles.push(new Particle(entityPosition.x, entityPosition.y, SPARK_PARTICLE));
+            return;
+        }
+
+        this.removeEntity(entity);
+        particles.push(new Particle(entityPosition.x, entityPosition.y, FIREWORK_PARTICLE));
+    }
+
+    updateEnemies = (particles) => {
+        this.enemies = [];
+
+        for (const entity of this.entityPositions.keys()) {
+            if (!entity.isEnemy) {
+                continue;
+            }
+
+            this.enemies.push(entity);
+        }
+
+        for (const entity of this.enemies) {
+            const direction = Math.floor(Math.random() * 4);
+            let directionX = 0
+            let directionY = 0;
+
+            switch (direction) {
+                case 0:
+                    directionX = -1;
+                    break;
+                case 1:
+                    directionX = 1;
+                    break;
+                case 2:
+                    directionY = -1;
+                    break;
+                case 3:
+                    directionY = 1;
+                    break;
+            }
+
+            this.moveEntity(directionX, directionY, entity, particles);
+        }
+    }
+
     isOccupied = (x, y) => {
-        return this.getEntity(x, y) || !this.getTile(x, y).walkable;
+        return this.getEntity(x, y) || !this.getTile(x, y).isWalkable;
     }
 
     calculateSubtiles = (x, y) => {
@@ -252,13 +369,43 @@ export class World {
             for (let y = 0; y < this.height; y++) {
                 const entity = this.entities[x + y * this.width];
                 if (entity) {
+                    const entityX = x * TILE_SIZE;
+                    const entityY = y * TILE_SIZE;
+
+                    renderer.drawSprite(
+                        entityX,
+                        entityY,
+                        TILE_SIZE,
+                        TILE_SIZE,
+                        texture,
+                        entity.textureIndex * TILE_SIZE,
+                        40,
+                    );
+
+                    continue;
+                }
+
+                const tile = this.getTile(x, y);
+                if (tile.isLight) {
+                    const isLit = this.getTile(x + 1, y) == tile ||
+                        this.getTile(x - 1, y) == tile ||
+                        this.getTile(x, y + 1) == tile ||
+                        this.getTile(x, y - 1) == tile;
+
+                    let texX = TILE_SIZE * tile.textureIndex * 2;
+
+                    if (isLit) {
+                        texX += TILE_SIZE;
+                    }
+
                     renderer.drawSprite(
                         x * TILE_SIZE,
                         y * TILE_SIZE,
                         TILE_SIZE,
                         TILE_SIZE,
                         texture,
-                        0, 24,
+                        texX,
+                        24,
                     );
                     continue;
                 }
