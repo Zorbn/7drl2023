@@ -14,6 +14,7 @@ const TRANSITION_STATE = 1;
 const HEALTH_PER_BONUS = 5;
 const DAMAGE_PER_BONUS = 5;
 const SHIELD_PER_BONUS = 5;
+const STARTING_LEVEL = 1;
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -36,13 +37,12 @@ const particles = [];
 let gameState = {
     state: IN_GAME_STATE,
     transitionTimer: 0,
+    level: STARTING_LEVEL,
 }
 
 const fpsTime = 1;
 let fpsTimer = 0;
 let lastTime = performance.now();
-
-// TODO: Handle player death.
 
 const spawnEntities = () => {
     const playerSpawnX = Math.floor(Math.random() * world.width);
@@ -80,12 +80,21 @@ const draw = (deltaTime) => {
         );
     }
 
+    renderer.drawSprite(4, 4, 8, 8, tilesTexture, 0, 112);
+
+    const levelChars = gameState.level.toString();
+
+    for (let i = 0; i < levelChars.length; i++) {
+        const digit = levelChars.charAt(i) - '0';
+        renderer.drawSprite(12 + i * 8, 4, 8, 8, tilesTexture, (digit + 1) * 8, 112);
+    }
+
     for (let i = 0; i < bonuses.damage; i++) {
-        renderer.drawSprite(4 + i * 8, 4, 8, 8, tilesTexture, 0, 104);
+        renderer.drawSprite(4 + i * 8, 14, 8, 8, tilesTexture, 0, 104);
     }
 
     for (let i = 0; i < bonuses.shield; i++) {
-        renderer.drawSprite(4 + i * 8, 12, 8, 8, tilesTexture, 8, 104);
+        renderer.drawSprite(4 + i * 8, 24, 8, 8, tilesTexture, 8, 104);
     }
 
     renderer.update(ctx);
@@ -103,13 +112,23 @@ const draw = (deltaTime) => {
 const updateInGame = (deltaTime) => {
     player.update(input, world, particles, deltaTime);
 
+    if (player.health <= 0) {
+        player.resetStats();
+        gameState.level = STARTING_LEVEL;
+        gameState.state = TRANSITION_STATE;
+        return;
+    }
+
     const playerPosition = world.getEntityPosition(player);
 
-    if (world.getTile(playerPosition.x, playerPosition.y) == EXIT_TILE) {
+    if (world.isCleared &&
+        world.getTile(playerPosition.x, playerPosition.y) == EXIT_TILE) {
+
         world.calculateBonuses(bonuses, particles);
         player.heal(bonuses.health * HEALTH_PER_BONUS);
         player.setDamage(bonuses.damage * DAMAGE_PER_BONUS);
         player.setShield(bonuses.shield * SHIELD_PER_BONUS);
+        gameState.level++;
         gameState.state = TRANSITION_STATE;
     }
 }

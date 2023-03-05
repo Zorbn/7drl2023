@@ -64,6 +64,7 @@ export class World {
         this.entities = new Array(width * height);
         this.entityPositions = new Map();
         this.subTiles = new Array(this.subtilesWidth * this.subtilesHeight);
+        this.isCleared = false;
     }
 
     generateRooms = () => {
@@ -165,6 +166,7 @@ export class World {
     }
 
     generate = () => {
+        this.isCleared = false;
         this.generateRooms();
         this.generateGameplay();
         this.generateExit();
@@ -313,6 +315,10 @@ export class World {
             enemies.push(entity);
         }
 
+        if (enemies.length == 0) {
+            this.isCleared = true;
+        }
+
         for (const entity of enemies) {
             const direction = Math.floor(Math.random() * 4);
             let directionX = 0
@@ -415,13 +421,15 @@ export class World {
                         24,
                     );
                 } else if (tile.isExit) {
+                    const texX = this.isCleared ? 0 : TILE_SIZE;
+
                     renderer.drawSprite(
                         x * TILE_SIZE,
                         y * TILE_SIZE,
                         TILE_SIZE,
                         TILE_SIZE,
                         texture,
-                        0,
+                        texX,
                         88,
                     );
                 } else {

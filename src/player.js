@@ -87,4 +87,10 @@ export class Player {
     setShield = (bonusShield) => {
         this.shield = bonusShield;
     }
+
+    resetStats = () => {
+        this.health = MAX_HEALTH;
+        this.damage = BASE_DAMAGE;
+        this.shield = 0;
+    }
 }
