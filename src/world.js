@@ -5,6 +5,7 @@ const TILE_TEXTURE_CENTER_X = 1;
 const TILE_TEXTURE_CENTER_Y = 1;
 const TILE_TEXTURE_CORNER_X = 4;
 const TILE_TEXTURE_CORNER_Y = 1;
+const GENERATION_PASSES = 4;
 
 export const STONE_FLOOR_TILE = {
     textureIndex: 0,
@@ -29,15 +30,67 @@ export class World {
     }
 
     generate = () => {
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                let tile = STONE_FLOOR_TILE;
+        let partitions = [{
+            x: 0,
+            y: 0,
+            width: this.width,
+            height: this.height,
+        }];
 
-                if (Math.random() < 0.4) {
-                    tile = STONE_WALL_TILE;
+        for (let i = 0; i < GENERATION_PASSES; i++) {
+            const partitionCount = partitions.length;
+
+            for (let j = 0; j < partitionCount; j++) {
+                const oldPartition = partitions.shift();
+
+                if (Math.random() > 0.5) {
+                    // Split horizontally:
+                    const splitPoint = Math.floor(Math.random() * oldPartition.width);
+                    partitions.push({
+                        x: oldPartition.x,
+                        y: oldPartition.y,
+                        width: splitPoint + 1,
+                        height: oldPartition.height,
+                    });
+                    partitions.push({
+                        x: oldPartition.x + splitPoint,
+                        y: oldPartition.y,
+                        width: oldPartition.width - splitPoint,
+                        height: oldPartition.height,
+                    });
+                } else {
+                    // Split vertically:
+                    const splitPoint = Math.floor(Math.random() * oldPartition.height);
+                    partitions.push({
+                        x: oldPartition.x,
+                        y: oldPartition.y,
+                        width: oldPartition.width,
+                        height: splitPoint + 1,
+                    });
+                    partitions.push({
+                        x: oldPartition.x,
+                        y: oldPartition.y + splitPoint,
+                        width: oldPartition.width,
+                        height: oldPartition.height - splitPoint,
+                    });
                 }
+            }
+        }
 
-                this.setTile(x, y, tile);
+        for (const partition of partitions) {
+            for (let y = 0; y < partition.height; y++) {
+                for (let x = 0; x < partition.width; x++) {
+                    let tile = STONE_FLOOR_TILE;
+
+                    if (x == 0 || y == 0 ||
+                        x == partition.width - 1 ||
+                        y == partition.height - 1) {
+
+                        tile = STONE_WALL_TILE;
+                    }
+
+                    this.setTile(x + partition.x, y + partition.y, tile);
+                }
             }
         }
     }
