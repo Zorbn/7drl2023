@@ -57,7 +57,7 @@ export class Renderer {
                 const srcR = texture.data[srcI];
                 const srcG = texture.data[srcI + 1];
                 const srcB = texture.data[srcI + 2];
-                // const srcA = tilesTexture.data[srcI + 3];
+                // const srcA = texture.data[srcI + 3];
 
                 // if (srcA < 255) continue;
 

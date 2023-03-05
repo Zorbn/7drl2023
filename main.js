@@ -1,4 +1,5 @@
 import { Input } from "./input.js";
+import { Player } from "./player.js";
 import { VIEW_WIDTH, VIEW_HEIGHT, Renderer } from "./renderer.js";
 import { TILE_SIZE, World } from "./world.js";
 
@@ -17,39 +18,11 @@ const tilesTexture = await renderer.loadTexture("tiles.png", 256, 256);
 const world = new World(VIEW_TILES_WIDTH, VIEW_TILES_HEIGHT);
 world.generate();
 
+const player = new Player(0, 0);
+
 const fpsTime = 1;
 let fpsTimer = 0;
 let lastTime = performance.now();
-
-let player = {
-    x: 0,
-    y: 0,
-    speed: 40,
-    update: (deltaTime) => {
-        let directionX = 0;
-        let directionY = 0;
-
-        if (input.isKeyPressed("KeyA")) {
-            directionX -= 1;
-        }
-
-        if (input.isKeyPressed("KeyD")) {
-            directionX += 1;
-        }
-
-        if (input.isKeyPressed("KeyW")) {
-            directionY -= 1;
-        }
-
-        if (input.isKeyPressed("KeyS")) {
-            directionY += 1;
-        }
-
-        const currentSpeed = player.speed * deltaTime;
-        player.x += directionX * currentSpeed;
-        player.y += directionY * currentSpeed;
-    },
-};
 
 const draw = (deltaTime) => {
     const drawStartTime = performance.now();
@@ -73,9 +46,11 @@ const update = () => {
     const deltaTime = (newTime - lastTime) * 0.001;
     lastTime = newTime;
 
-    player.update(deltaTime);
+    player.update(input, world, deltaTime);
 
     draw(deltaTime);
+
+    input.update();
 
     requestAnimationFrame(update);
 }

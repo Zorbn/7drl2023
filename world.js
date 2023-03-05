@@ -6,13 +6,15 @@ const TILE_TEXTURE_CENTER_Y = 1;
 const TILE_TEXTURE_CORNER_X = 4;
 const TILE_TEXTURE_CORNER_Y = 1;
 
-export const GRASS_TILE = {
-    textureIndex: 1,
-};
-
-export const WATER_TILE = {
+export const STONE_FLOOR_TILE = {
     textureIndex: 0,
+    walkable: true,
 }
+
+export const STONE_WALL_TILE = {
+    textureIndex: 1,
+    walkable: false,
+};
 
 export class World {
     constructor(width, height) {
@@ -21,16 +23,17 @@ export class World {
         this.subtilesWidth = width * 2;
         this.subtilesHeight = height * 2;
         this.tiles = new Array(width * height);
+        this.entities = new Array(width * height);
         this.subTiles = new Array(this.subtilesWidth * this.subtilesHeight);
     }
 
     generate = () => {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                let tile = WATER_TILE;
+                let tile = STONE_FLOOR_TILE;
 
                 if (Math.random() < 0.4) {
-                    tile = GRASS_TILE;
+                    tile = STONE_WALL_TILE;
                 }
 
                 this.setTile(x, y, tile);
@@ -40,7 +43,7 @@ export class World {
 
     getTile = (x, y) => {
         if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
-            return WATER_TILE;
+            return STONE_WALL_TILE;
         }
 
         return this.tiles[x + y * this.width];
@@ -63,6 +66,26 @@ export class World {
                 this.calculateSubtiles(neighborX, neighborY);
             }
         }
+    }
+
+    removeEntity = (x, y) => {
+        this.entities[x + y * this.width] = null;
+    }
+
+    addEntity = (x, y, entity) => {
+        this.entities[x + y * this.width] = entity;
+    }
+
+    getEntity = (x, y) => {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+            return null;
+        }
+
+        return this.entities[x + y * this.width];
+    }
+
+    isOccupied = (x, y) => {
+        return this.getEntity(x, y) || !this.getTile(x, y).walkable;
     }
 
     calculateSubtiles = (x, y) => {
@@ -109,19 +132,38 @@ export class World {
     }
 
     draw = (renderer, texture) => {
-        for (let y = 0; y < this.subtilesHeight; y++) {
-            for (let x = 0; x < this.subtilesWidth; x++) {
-                const subTile = this.subTiles[x + y * this.subtilesWidth];
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                const entity = this.entities[x + y * this.width];
+                if (entity) {
+                    renderer.drawSprite(
+                        x * TILE_SIZE,
+                        y * TILE_SIZE,
+                        TILE_SIZE,
+                        TILE_SIZE,
+                        texture,
+                        0, 24,
+                    );
+                    continue;
+                }
 
-                renderer.drawSprite(
-                    x * SUBTILE_SIZE,
-                    y * SUBTILE_SIZE,
-                    SUBTILE_SIZE,
-                    SUBTILE_SIZE,
-                    texture,
-                    subTile.texX,
-                    subTile.texY,
-                );
+                for (let subY = 0; subY < 2; subY++) {
+                    for (let subX = 0; subX < 2; subX++) {
+                        const subTileX = x * 2 + subX;
+                        const subTileY = y * 2 + subY;
+                        const subTile = this.subTiles[subTileX + subTileY * this.subtilesWidth];
+
+                        renderer.drawSprite(
+                            subTileX * SUBTILE_SIZE,
+                            subTileY * SUBTILE_SIZE,
+                            SUBTILE_SIZE,
+                            SUBTILE_SIZE,
+                            texture,
+                            subTile.texX,
+                            subTile.texY,
+                        );
+                    }
+                }
             }
         }
     }
