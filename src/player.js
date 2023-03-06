@@ -63,10 +63,15 @@ export class Player {
             TILE_SIZE, 4,
             0, 0, 0,
         );
+
+        const healthLength = Math.floor(TILE_SIZE *
+            (this.health / MAX_HEALTH)) - 2;
+        const clampedHealthLength = Math.max(healthLength, 1);
+
         renderer.drawRect(
             x + 1,
             y + 1,
-            Math.floor(TILE_SIZE * (this.health / MAX_HEALTH)) - 2,
+            clampedHealthLength,
             2,
             255, 0, 0,
         );

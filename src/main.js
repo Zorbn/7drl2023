@@ -1,4 +1,4 @@
-import { Enemy } from "./enemy.js";
+import { Enemy, ENEMY_TYPES } from "./enemy.js";
 import { Input } from "./input.js";
 import { Player } from "./player.js";
 import { VIEW_WIDTH, VIEW_HEIGHT, Renderer } from "./renderer.js";
@@ -6,7 +6,9 @@ import { EXIT_TILE, STONE_FLOOR_TILE, TILE_SIZE, World } from "./world.js";
 
 const VIEW_TILES_WIDTH = Math.floor(VIEW_WIDTH / TILE_SIZE);
 const VIEW_TILES_HEIGHT = Math.floor(VIEW_HEIGHT / TILE_SIZE);
-const ENEMY_COUNT = 7;
+const BASE_ENEMY_COUNT = 7;
+const ENEMY_COUNT_INCREMENT = 3;
+const MAX_ENEMY_COUNT = 25;
 const ENEMY_SPAWN_RETRY_COUNT = 3;
 const TRANSITION_TIME = 1.5;
 const IN_GAME_STATE = 0;
@@ -50,12 +52,18 @@ const spawnEntities = () => {
     world.setTile(playerSpawnX, playerSpawnY, STONE_FLOOR_TILE);
     world.setEntity(playerSpawnX, playerSpawnY, player);
 
-    for (let i = 0; i < ENEMY_COUNT; i++) {
+    const enemyCount = Math.min(BASE_ENEMY_COUNT +
+        ENEMY_COUNT_INCREMENT * gameState.level, MAX_ENEMY_COUNT);
+
+    for (let i = 0; i < enemyCount; i++) {
         for (let j = 0; j < ENEMY_SPAWN_RETRY_COUNT; j++) {
             const x = Math.floor(Math.random() * world.width);
             const y = Math.floor(Math.random() * world.height);
             if (world.isOccupied(x, y)) continue;
-            world.setEntity(x, y, new Enemy());
+
+            const enemyTypeIndex = Math.floor(Math.random() * ENEMY_TYPES.length) % gameState.level;
+
+            world.setEntity(x, y, new Enemy(ENEMY_TYPES[enemyTypeIndex]));
             break;
         }
     }
