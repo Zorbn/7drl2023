@@ -391,7 +391,7 @@ export class World {
         }
     }
 
-    isTileLit = (x, y, tile) => {
+    isTileNearSimilarTile = (x, y, tile) => {
         return this.getTile(x + 1, y) == tile ||
         this.getTile(x - 1, y) == tile ||
         this.getTile(x, y + 1) == tile ||
@@ -404,7 +404,7 @@ export class World {
                 const tile = this.getTile(x, y);
 
                 if (tile.isLight) {
-                    const isLit = this.isTileLit(x, y, tile);
+                    const isLit = this.isTileNearSimilarTile(x, y, tile);
 
                     let texX = TILE_SIZE * tile.textureIndex * 2;
 
@@ -545,7 +545,7 @@ export class World {
             for (let x = 0; x < this.width; x++) {
                 const tile = this.getTile(x, y);
                 if (!tile || !tile.isLight ||
-                    !this.isTileLit(x, y, tile)) continue;
+                    !this.isTileNearSimilarTile(x, y, tile)) continue;
 
                 particles.push(new Particle(x, y, FIREWORK_PARTICLE));
 
