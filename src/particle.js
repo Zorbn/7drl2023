@@ -2,7 +2,7 @@ import { TILE_SIZE } from "./world.js";
 
 export const SPARK_PARTICLE = {
     texY: 56,
-    frames: 6,
+    frames: 4,
 };
 
 export const FIREWORK_PARTICLE = {
@@ -10,7 +10,7 @@ export const FIREWORK_PARTICLE = {
     frames: 5,
 };
 
-const FRAME_TIME = 0.1;
+const FRAME_TIME = 0.05;
 
 export class Particle {
     constructor(x, y, type) {
