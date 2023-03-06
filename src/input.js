@@ -3,6 +3,7 @@ export class Input {
         this.pressedKeys = new Set();
         this.pressedMouseButtons = new Set();
         this.keyWasPressed = new Set();
+        this.keyWasReleased = new Set();
         this.mouseButtonWasPressed = new Set();
         this.hasListeners = false;
 
@@ -71,8 +72,13 @@ export class Input {
         return false;
     }
 
+    wasAnyKeyReleased = () => {
+        return this.keyWasReleased.size > 0;
+    }
+
     update = () => {
         this.keyWasPressed.clear();
+        this.keyWasReleased.clear();
         this.mouseButtonWasPressed.clear();
     }
 
@@ -89,7 +95,9 @@ export class Input {
         document.addEventListener("keydown", this.keyDownListener);
 
         this.keyUpListener = (event) => {
-            this.pressedKeys.delete(event.code);
+            if (this.pressedKeys.delete(event.code)) {
+                this.keyWasReleased.add(event.code);
+            }
         }
         document.addEventListener("keyup", this.keyUpListener);
 

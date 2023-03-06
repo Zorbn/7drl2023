@@ -15,42 +15,42 @@ const ROOM_COUNT = 10;
 
 export const STONE_FLOOR_TILE = {
     textureIndex: 0,
-    isLight: false,
+    isRune: false,
     isWalkable: true,
     isExit: false,
 };
 
 export const STONE_WALL_TILE = {
     textureIndex: 1,
-    isLight: false,
+    isRune: false,
     isWalkable: false,
     isExit: false,
 };
 
-export const HEALTH_LIGHT_TILE = {
+export const HEALTH_RUNE_TILE = {
     textureIndex: 0,
-    isLight: true,
+    isRune: true,
     isWalkable: true,
     isExit: false,
 };
 
-export const DAMAGE_LIGHT_TILE = {
+export const DAMAGE_RUNE_TILE = {
     textureIndex: 1,
-    isLight: true,
+    isRune: true,
     isWalkable: true,
     isExit: false,
 };
 
-export const SHIELD_LIGHT_TILE = {
+export const SHIELD_RUNE_TILE = {
     textureIndex: 2,
-    isLight: true,
+    isRune: true,
     isWalkable: true,
     isExit: false,
 };
 
 export const EXIT_TILE = {
     textureIndex: 0,
-    isLight: false,
+    isRune: false,
     isWalkable: true,
     isExit: true,
 };
@@ -142,20 +142,20 @@ export class World {
                     continue;
                 }
 
-                const lightType = randomInt(3);
-                let light;
-                switch (lightType) {
+                const runeType = randomInt(3);
+                let rune;
+                switch (runeType) {
                     case 0:
-                        light = HEALTH_LIGHT_TILE;
+                        rune = HEALTH_RUNE_TILE;
                         break;
                     case 1:
-                        light = DAMAGE_LIGHT_TILE;
+                        rune = DAMAGE_RUNE_TILE;
                         break;
                     case 2:
-                        light = SHIELD_LIGHT_TILE;
+                        rune = SHIELD_RUNE_TILE;
                         break;
                 }
-                this.setTile(x, y, light);
+                this.setTile(x, y, rune);
             }
         }
     }
@@ -403,7 +403,7 @@ export class World {
             for (let y = 0; y < this.height; y++) {
                 const tile = this.getTile(x, y);
 
-                if (tile.isLight) {
+                if (tile.isRune) {
                     const isLit = this.isTileNearSimilarTile(x, y, tile);
 
                     let texX = TILE_SIZE * tile.textureIndex * 2;
@@ -544,22 +544,22 @@ export class World {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const tile = this.getTile(x, y);
-                if (!tile || !tile.isLight ||
+                if (!tile || !tile.isRune ||
                     !this.isTileNearSimilarTile(x, y, tile)) continue;
 
                 particles.push(new Particle(x, y, FIREWORK_PARTICLE));
 
-                if (tile == DAMAGE_LIGHT_TILE) {
+                if (tile == DAMAGE_RUNE_TILE) {
                     bonuses.damage += 1;
                     continue;
                 }
 
-                if (tile == HEALTH_LIGHT_TILE) {
+                if (tile == HEALTH_RUNE_TILE) {
                     bonuses.health += 1;
                     continue;
                 }
 
-                if (tile == SHIELD_LIGHT_TILE) {
+                if (tile == SHIELD_RUNE_TILE) {
                     bonuses.shield += 1;
                 }
             }

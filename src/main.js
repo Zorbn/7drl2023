@@ -7,17 +7,23 @@ import { EXIT_TILE, STONE_FLOOR_TILE, TILE_SIZE, World } from "./world.js";
 
 const VIEW_TILES_WIDTH = Math.floor(VIEW_WIDTH / TILE_SIZE);
 const VIEW_TILES_HEIGHT = Math.floor(VIEW_HEIGHT / TILE_SIZE);
+
 const BASE_ENEMY_COUNT = 7;
 const ENEMY_COUNT_INCREMENT = 3;
 const MAX_ENEMY_COUNT = 25;
 const ENEMY_SPAWN_RETRY_COUNT = 3;
+
 const TRANSITION_TIME = 1.0;
-const IN_GAME_STATE = 0;
-const TRANSITION_STATE = 1;
+
+const MENU_STATE = 0;
+const IN_GAME_STATE = 1;
+const TRANSITION_STATE = 2;
+
+const STARTING_LEVEL = 1;
+
 const HEALTH_PER_BONUS = 10;
 const DAMAGE_PER_BONUS = 5;
 const SHIELD_PER_BONUS = 5;
-const STARTING_LEVEL = 1;
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -38,7 +44,7 @@ const bonuses = {
 };
 const particles = [];
 let gameState = {
-    state: IN_GAME_STATE,
+    state: MENU_STATE,
     transitionTimer: 0,
     level: STARTING_LEVEL,
 }
@@ -70,9 +76,12 @@ const spawnEntities = () => {
     }
 }
 
-const draw = (deltaTime) => {
-    const drawStartTime = performance.now();
+const drawMenu = () => {
+    renderer.drawRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT, 0, 0, 0);
+    renderer.drawSprite(60, 64, 200, 48, tilesTexture, 0, 208);
+}
 
+const drawGame = (deltaTime) => {
     world.draw(renderer, tilesTexture);
 
     for (const particle of particles) {
@@ -105,17 +114,14 @@ const draw = (deltaTime) => {
     for (let i = 0; i < bonuses.shield; i++) {
         renderer.drawSprite(4 + i * 8, 24, 8, 8, tilesTexture, 8, 104);
     }
+}
 
-    renderer.update(ctx);
-
-    const drawEndTime = performance.now();
-
-    fpsTimer += deltaTime;
-
-    if (fpsTimer > fpsTime) {
-        fpsTimer = 0;
-        console.log(drawEndTime - drawStartTime);
+const updateMenu = () => {
+    if (!input.wasAnyKeyReleased()) {
+        return;
     }
+
+    gameState.state = IN_GAME_STATE;
 }
 
 const updateInGame = (deltaTime) => {
@@ -159,10 +165,16 @@ const update = () => {
     const deltaTime = (newTime - lastTime) * 0.001;
     lastTime = newTime;
 
-    if (gameState.state == IN_GAME_STATE) {
-        updateInGame(deltaTime);
-    } else if (gameState.state == TRANSITION_STATE) {
-        updateTransition(deltaTime);
+    switch (gameState.state) {
+        case MENU_STATE:
+            updateMenu();
+            break;
+        case IN_GAME_STATE:
+            updateInGame(deltaTime);
+            break;
+        case TRANSITION_STATE:
+            updateTransition(deltaTime);
+            break;
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -171,7 +183,30 @@ const update = () => {
         }
     }
 
-    draw(deltaTime);
+    const drawStartTime = performance.now();
+
+    switch (gameState.state) {
+        case MENU_STATE:
+            drawMenu();
+            break;
+        case IN_GAME_STATE:
+            drawGame(deltaTime)
+            break;
+        case TRANSITION_STATE:
+            drawGame(deltaTime)
+            break;
+    }
+
+    renderer.update(ctx);
+
+    const drawEndTime = performance.now();
+
+    fpsTimer += deltaTime;
+
+    if (fpsTimer > fpsTime) {
+        fpsTimer = 0;
+        console.log(drawEndTime - drawStartTime);
+    }
 
     input.update();
 
