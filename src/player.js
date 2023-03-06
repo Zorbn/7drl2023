@@ -15,7 +15,7 @@ export class Player {
         this.shield = 0;
     }
 
-    update = (input, world, particles, deltaTime) => {
+    update = (input, sound, world, particles, deltaTime) => {
         let deltaX = input.getHorizontalAxis();
         let deltaY = input.getVerticalAxis();
 
@@ -52,8 +52,9 @@ export class Player {
 
         this.moveTimer = MOVE_COOLDOWN;
 
-        world.moveEntity(deltaX, deltaY, this, particles, true);
-        world.updateEnemies(particles);
+        world.moveEntity(deltaX, deltaY, this, sound, particles, true);
+        sound.step.play();
+        world.updateEnemies(sound, particles);
     }
 
     drawHealthbar = (renderer, x, y) => {

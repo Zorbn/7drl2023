@@ -253,7 +253,7 @@ export class World {
         return this.entities[x + y * this.width];
     }
 
-    moveEntity = (deltaX, deltaY, entity, particles, canPush = false) => {
+    moveEntity = (deltaX, deltaY, entity, sound, particles, canPush = false) => {
         const entityPosition = this.entityPositions.get(entity);
 
         if (!entityPosition) {
@@ -266,7 +266,7 @@ export class World {
         const entityAtDst = this.getEntity(dstX, dstY);
         if (entityAtDst) {
             if (entityAtDst.isEnemy != entity.isEnemy) {
-                this.attackEntity(entity, entityAtDst, particles);
+                this.attackEntity(entity, entityAtDst, sound, particles);
             }
 
             return;
@@ -293,7 +293,9 @@ export class World {
         this.setEntity(dstX, dstY, entity);
     }
 
-    attackEntity = (attacker, target, particles) => {
+    attackEntity = (attacker, target, sound, particles) => {
+        sound.hit.play();
+
         const targetPosition = this.getEntityPosition(target);
         target.health -= Math.max(attacker.damage - target.shield, 0);
         if (target.health > 0) {
@@ -305,7 +307,7 @@ export class World {
         particles.push(new Particle(targetPosition.x, targetPosition.y, FIREWORK_PARTICLE));
     }
 
-    updateEnemies = (particles) => {
+    updateEnemies = (sound, particles) => {
         let enemies = [];
 
         for (const entity of this.entityPositions.keys()) {
@@ -340,7 +342,7 @@ export class World {
                     break;
             }
 
-            this.moveEntity(directionX, directionY, entity, particles);
+            this.moveEntity(directionX, directionY, entity, sound, particles);
         }
     }
 

@@ -1,6 +1,7 @@
 import { Enemy, ENEMY_TYPES } from "./enemy.js";
 import { randomInt } from "./gameMath.js";
 import { Input } from "./input.js";
+import { Sound } from "./sound.js";
 import { Player } from "./player.js";
 import { VIEW_WIDTH, VIEW_HEIGHT, Renderer } from "./renderer.js";
 import { EXIT_TILE, STONE_FLOOR_TILE, TILE_SIZE, World } from "./world.js";
@@ -25,11 +26,15 @@ const HEALTH_PER_BONUS = 10;
 const DAMAGE_PER_BONUS = 5;
 const SHIELD_PER_BONUS = 5;
 
+const LOG_DRAW_TIME = false;
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const input = new Input();
 input.addListeners();
+
+const sound = new Sound();
 
 const renderer = new Renderer();
 const tilesTexture = await renderer.loadTexture("tiles.png", 256, 256);
@@ -121,11 +126,12 @@ const updateMenu = () => {
         return;
     }
 
+    sound.success.play();
     gameState.state = IN_GAME_STATE;
 }
 
 const updateInGame = (deltaTime) => {
-    player.update(input, world, particles, deltaTime);
+    player.update(input, sound, world, particles, deltaTime);
 
     if (player.health <= 0) {
         player.resetStats();
@@ -143,6 +149,7 @@ const updateInGame = (deltaTime) => {
         player.heal(bonuses.health * HEALTH_PER_BONUS);
         player.setDamage(bonuses.damage * DAMAGE_PER_BONUS);
         player.setShield(bonuses.shield * SHIELD_PER_BONUS);
+        sound.success.play();
         gameState.level++;
         gameState.state = TRANSITION_STATE;
     }
@@ -199,13 +206,15 @@ const update = () => {
 
     renderer.update(ctx);
 
-    const drawEndTime = performance.now();
+    if (LOG_DRAW_TIME) {
+        const drawEndTime = performance.now();
 
-    fpsTimer += deltaTime;
+        fpsTimer += deltaTime;
 
-    if (fpsTimer > fpsTime) {
-        fpsTimer = 0;
-        console.log(drawEndTime - drawStartTime);
+        if (fpsTimer > fpsTime) {
+            fpsTimer = 0;
+            console.log(drawEndTime - drawStartTime);
+        }
     }
 
     input.update();
