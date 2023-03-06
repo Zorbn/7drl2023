@@ -1,4 +1,5 @@
 import { Enemy, ENEMY_TYPES } from "./enemy.js";
+import { randomInt } from "./gameMath.js";
 import { Input } from "./input.js";
 import { Player } from "./player.js";
 import { VIEW_WIDTH, VIEW_HEIGHT, Renderer } from "./renderer.js";
@@ -47,8 +48,8 @@ let fpsTimer = 0;
 let lastTime = performance.now();
 
 const spawnEntities = () => {
-    const playerSpawnX = Math.floor(Math.random() * world.width);
-    const playerSpawnY = Math.floor(Math.random() * world.height);
+    const playerSpawnX = randomInt(world.width);
+    const playerSpawnY = randomInt(world.height);
     world.setTile(playerSpawnX, playerSpawnY, STONE_FLOOR_TILE);
     world.setEntity(playerSpawnX, playerSpawnY, player);
 
@@ -57,11 +58,11 @@ const spawnEntities = () => {
 
     for (let i = 0; i < enemyCount; i++) {
         for (let j = 0; j < ENEMY_SPAWN_RETRY_COUNT; j++) {
-            const x = Math.floor(Math.random() * world.width);
-            const y = Math.floor(Math.random() * world.height);
+            const x = randomInt(world.width);
+            const y = randomInt(world.height);
             if (world.isOccupied(x, y)) continue;
 
-            const enemyTypeIndex = Math.floor(Math.random() * ENEMY_TYPES.length) % gameState.level;
+            const enemyTypeIndex = randomInt(ENEMY_TYPES.length) % gameState.level;
 
             world.setEntity(x, y, new Enemy(ENEMY_TYPES[enemyTypeIndex]));
             break;

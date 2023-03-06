@@ -1,4 +1,5 @@
 import { FIREWORK_PARTICLE, Particle, SPARK_PARTICLE } from "./particle.js";
+import { randomInt, wrap } from "./gameMath.js";
 
 export const TILE_SIZE = 16;
 const SUBTILE_SIZE = 8;
@@ -72,10 +73,10 @@ export class World {
 
         for (let i = 0; i < ROOM_COUNT; i++) {
             rooms[i] = {
-                x: Math.floor(Math.random() * this.width),
-                y: Math.floor(Math.random() * this.height),
-                width: MIN_ROOM_SIZE + Math.floor(Math.random() * ROOM_SIZE_VARIANCE),
-                height: MIN_ROOM_SIZE + Math.floor(Math.random() * ROOM_SIZE_VARIANCE),
+                x: randomInt(this.width),
+                y: randomInt(this.height),
+                width: MIN_ROOM_SIZE + randomInt(ROOM_SIZE_VARIANCE),
+                height: MIN_ROOM_SIZE + randomInt(ROOM_SIZE_VARIANCE),
             };
         }
 
@@ -99,7 +100,7 @@ export class World {
 
             let startX;
             let endX;
-            let startY = lastRoom.y + Math.floor(Math.random() * lastRoom.height);
+            let startY = lastRoom.y + randomInt(lastRoom.height);
             let endY;
 
             if (lastRoom.x < room.x) {
@@ -141,7 +142,7 @@ export class World {
                     continue;
                 }
 
-                const lightType = Math.floor(Math.random() * 3);
+                const lightType = randomInt(3);
                 let light;
                 switch (lightType) {
                     case 0:
@@ -160,8 +161,8 @@ export class World {
     }
 
     generateExit = () => {
-        const exitX = Math.floor(Math.random() * this.width);
-        const exitY = Math.floor(Math.random() * this.height);
+        const exitX = randomInt(this.width);
+        const exitY = randomInt(this.height);
         this.setTile(exitX, exitY, EXIT_TILE);
     }
 
@@ -259,8 +260,8 @@ export class World {
             return;
         }
 
-        const dstX = entityPosition.x + deltaX;
-        const dstY = entityPosition.y + deltaY;
+        let dstX = wrap(entityPosition.x + deltaX, this.width);
+        let dstY = wrap(entityPosition.y + deltaY, this.height);
 
         const entityAtDst = this.getEntity(dstX, dstY);
         if (entityAtDst) {
@@ -320,7 +321,7 @@ export class World {
         }
 
         for (const entity of enemies) {
-            const direction = Math.floor(Math.random() * 4);
+            const direction = randomInt(4);
             let directionX = 0
             let directionY = 0;
 
