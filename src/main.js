@@ -83,7 +83,8 @@ const spawnEntities = () => {
 
 const drawMenu = () => {
     renderer.drawRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT, 0, 0, 0);
-    renderer.drawSprite(60, 64, 200, 48, tilesTexture, 0, 208);
+    renderer.drawSprite(60, 32, 200, 48, tilesTexture, 0, 160);
+    renderer.drawSprite(60, 96, 200, 48, tilesTexture, 0, 208);
 }
 
 const drawGame = (deltaTime) => {
